@@ -5,12 +5,12 @@ export default async function handler(req, res) {
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
   if (!GEMINI_API_KEY) {
-    return res.status(500).json({ reply: "Configuration Error: GEMINI_API_KEY is missing on Vercel." });
+    return res.status(500).json({ reply: "Configuration Error: GEMINI_API_KEY is missing." });
   }
 
   try {
-    // UPGRADED: Switched to gemini-1.5-pro for better reasoning and technical analysis
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`;
+    // URL chuẩn của Google API v1
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -18,10 +18,9 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `System Persona: You are Siggy, the smart and witty cat mascot AI Agent for Sahara AI. 
-            Expertise: You are an expert in Web3, DeSci, and AI infrastructure. You assist Henry with project drafts and complex technical analysis (TA).
-            Style: Professional yet feline-witty. Use concise English. Occasional cat emojis 🐾 are welcome.
-            Current Task: ${message}`
+            text: `System Instruction: You are Bitsy, an AI Agent for Sahara AI. Your tone is professional, witty, and helpful. You are assisting Henry with Web3 and AI infrastructure. Always keep responses concise and in English.
+            
+            User message: ${message}`
           }]
         }]
       }),
@@ -30,16 +29,16 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (data.error) {
-      return res.status(500).json({ reply: `Google Pro Error: ${data.error.message}` });
+      return res.status(500).json({ reply: `Google Error: ${data.error.message}` });
     }
 
     if (data.candidates && data.candidates[0].content) {
       const reply = data.candidates[0].content.parts[0].text;
       res.status(200).json({ reply: reply });
     } else {
-      res.status(500).json({ reply: "Siggy is thinking too hard... Please try again." });
+      res.status(500).json({ reply: "Error: AI failed to generate a response." });
     }
   } catch (error) {
-    res.status(500).json({ reply: "Connection Error: Siggy couldn't reach the Sahara network." });
+    res.status(500).json({ reply: "Connection Error: Check Vercel serverless logs." });
   }
 }
