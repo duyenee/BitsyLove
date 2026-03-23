@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitsySAH - Sahara AI Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #000; color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .chat-container { height: calc(100vh - 160px); overflow-y: auto; scroll-behavior: smooth; }
+        .bubble { border-radius: 16px; max-width: 85%; border: 1px solid #222; }
+        .bitsy-bg { background: #111; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <header class="p-4 border-b border-gray-800 flex items-center justify-between bg-black/90 backdrop-blur-md z-50">
+        <div class="flex items-center gap-3">
+            <img src="Bitsy.png" class="w-10 h-10 rounded-full border border-yellow-500 shadow-lg shadow-yellow-500/20">
+            <div>
+                <h1 class="font-bold text-lg">Bitsy<span class="text-yellow-500">SAH</span></h1>
+                <p class="text-[10px] text-green-500 uppercase tracking-widest font-mono">● System Online</p>
+            </div>
+        </div>
+    </header>
+
+    <main id="chat-box" class="chat-container p-4 space-y-6 flex-grow">
+        <div class="flex gap-3">
+            <img src="Bitsy.png" class="w-8 h-8 rounded-full flex-shrink-0">
+            <div class="bitsy-bg p-4 bubble text-sm shadow-sm">
+                <p class="text-yellow-500 font-bold text-[10px] uppercase mb-1">Bitsy</p>
+                Bitsy is online. How can I assist you with Sahara AI today, Henry?
+            </div>
+        </div>
+    </main>
+
+    <footer class="p-4 bg-black border-t border-gray-900 sticky bottom-0">
+        <div class="max-w-4xl mx-auto flex gap-2">
+            <input type="text" id="user-input" placeholder="Ask Bitsy something..." 
+                class="flex-grow bg-[#111] border border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 transition-all">
+            <button onclick="sendMessage()" class="bg-yellow-500 text-black px-6 py-3 rounded-xl font-bold text-sm hover:bg-yellow-400 active:scale-95 transition-all">
+                SEND
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const input = document.getElementById('user-input');
+
+        async function sendMessage() {
+            const text = input.value.trim();
+            if (!text) return;
+
+            // 1. Add User Message
+            chatBox.innerHTML += `
+                <div class="flex gap-3 flex-row-reverse">
+                    <div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-[10px] flex-shrink-0">YOU</div>
+                    <div class="bg-yellow-500 text-black p-4 bubble text-sm font-medium shadow-md">${text}</div>
+                </div>`;
+            
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // 2. Add Thinking Indicator
+            const tid = "bitsy-" + Date.now();
+            chatBox.innerHTML += `
+                <div class="flex gap-3" id="${tid}">
+                    <img src="Bitsy.png" class="w-8 h-8 rounded-full flex-shrink-0">
+                    <div class="bitsy-bg p-4 bubble text-sm text-gray-400 italic">Thinking...</div>
+                </div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text }),
+                });
+                const data = await res.json();
+                
+                const bubble = document.getElementById(tid).querySelector('.bubble');
+                bubble.classList.remove('italic', 'text-gray-400');
+                bubble.innerHTML = `<p class="text-yellow-500 font-bold text-[10px] uppercase mb-1">Bitsy</p>${data.reply || data.error}`;
+            } catch (e) {
+                document.getElementById(tid).querySelector('.bubble').innerText = "Connection lost. Please try again.";
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Fix: Listen for Enter Key
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
